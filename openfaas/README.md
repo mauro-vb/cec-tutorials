@@ -1,4 +1,8 @@
-# Overview
+# Update Repository
+
+```bash
+git pull
+```
 
 # Installation & Setup
 
@@ -22,16 +26,23 @@ export OPENFAAS_PREFIX="localhost:5000"
 source ~/.bashrc
 ```
 
-Install openfaas: 
+Create the openfaas namespaces and install helm:
 ```bash
-arkade install openfaas
+kubectl apply -f https://raw.githubusercontent.com/openfaas/faas-netes/master/namespaces.yml
+arkade get helm
 ```
 
-Run the following commands to deploy our first function:
+Add our helm repository for the purposes of this tutorial, make sure it is up
+to date, and install the openfaas release:
 ```bash
-# Forward the gateway to your machine
-kubectl rollout status -n openfaas deploy/gateway
-kubectl port-forward -n openfaas svc/gateway 8080:8080 &
+helm repo add customof https://raw.githubusercontent.com/landaudiogo/faasnetes-fork/changes/docs
+helm repo update customof
+helm install openfaas customof/openfaas --namespace openfaas
+```
+
+Allow connecting to the openfaas service from our VM's 8080 port:
+```bash
+kubectl port-forward -n openfaas svc/gateway 8080:8080 >/dev/null 2>&1 & disown
 ```
 
 ```bash
@@ -75,7 +86,7 @@ cd openfaas
 
 To create a new function, run: 
 ```bash
-faas-cli new --lang python hello-world
+faas-cli new --lang python3 hello-world
 ```
 
 This should add 2 directories, a `hello-world` and `template` directory.
@@ -95,7 +106,7 @@ body of th request. Let's modify the return from this:
 To this: 
 ```python
     # ... 
-    return "Hello from ECC " + req 
+    return "Hello from CEC " + req 
 ```
 
 We can now, build, push and deploy our functions to our k8s cluster:
@@ -113,6 +124,7 @@ You may now make a request to your service:
 ```bash
 curl http://127.0.0.1:8080/function/hello-world
 ```
+
 
 # Installing Additional Software Dependencies
 
@@ -229,12 +241,12 @@ curl http://127.0.0.1:8080/function/python-db
 
 # Creating a Custom Function
 
-Openfaas allows you to create functions based on the templtes provided, but you
+Openfaas allows you to create functions based on the templates provided, but you
 may also create your function based on your own Dockerfile. This requires
 understanding how openfaas deploys a **function**, based on its design and
 architecture. If you want to deploy your custom function, read through
 [this](https://docs.openfaas.com/architecture/watchdog/) documentation to
-better understand how openfaas' request model.
+better understand openfaas' request model.
 
 > For further reading into deploying a flask app as a serverless function in
 > openfaas, refer to [this](https://www.openfaas.com/blog/openfaas-flask/)
@@ -358,6 +370,7 @@ curl http://127.0.0.1:8080/function/python-db
 
 To delete the resources we just created, run: 
 ```bash
+faas-cli remove figlet
 faas-cli remove hello-world
 faas-cli remove python-db
 faas-cli remove custom-function
